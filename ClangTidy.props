@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)ClangTidyProps.xml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ClangTidyExe>$(LLVM_ROOT)\bin\clang-tidy.exe</ClangTidyExe>
+  </PropertyGroup>
+
+  <Target Name="ClangTidy" Outputs="$(IntDir)%(ClCompile.Identity).clang-tidy.plist" DependsOnTargets="_SelectedFiles;$(ComputeCompileInputsTargets);SelectCustomBuild" AfterTargets="ClCompile">
+    <ItemGroup Condition="'@(SelectedFiles)'!=''">
+      <ClCompile Remove="@(ClCompile)" Condition="'%(Identity)'!='@(SelectedFiles)'"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <CppDefines>-D_MT -D$([System.String]::Copy(&quot;%(ClCompile.PreprocessorDefinitions)&quot;).TrimEnd(';').Replace(&quot;;&quot;,&quot; -D&quot;)) -I&quot;$([System.String]::Copy(&quot;$(Include.Replace(';;',';').Replace(';;',';'))&quot;).TrimEnd(';').Replace(';','&quot; -I&quot;'))&quot;</CppDefines>
+    </PropertyGroup>
+
+    <Message  Condition="'@(ClCompile)'!=''" Text="[CLANG-TIDY] %(ClCompile.Identity)" Importance="high" />
+
+    <Exec Condition="'@(ClCompile)'!=''" IgnoreExitCode="yes" command="&quot;$(ClangTidyExe)&quot; -quiet -checks=* %(ClCompile.Identity) -- $(CppDefines)" />
+  </Target>
+
+
+
+</Project>

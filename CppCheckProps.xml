@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+  <Rule Name="cppcheck_sheet"
+        DisplayName="CppCheck"
+        PageTemplate="generic"
+        Description="CppCheck properties"
+        xmlns="http://schemas.microsoft.com/build/2009/properties">
+    
+    <Rule.Categories>
+      <Category Name="CppCheckGeneral" DisplayName="General" />
+    </Rule.Categories>
+    
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" />
+    </Rule.DataSource>
+
+    <StringProperty Category="CppCheckGeneral" Switch="aa" 
+                    Name="CppCheckExe" 
+                    DisplayName="CppCheck Executable" 
+                    Description="Path to cppcheck.exe" />
+
+    <StringProperty Category="CppCheckGeneral" Switch="ab" 
+                    Name="CppCheckAdditionalDefines"
+                    DisplayName="Additional Defines"
+                    Description="Additional defines to pass to cppcheck" />
+
+  </Rule>
+
+</ProjectSchemaDefinitions>

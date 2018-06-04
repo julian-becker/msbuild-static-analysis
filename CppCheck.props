@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)CppCheckProps.xml">
+      <Context>Project</Context>
+    </PropertyPageSchema>
+  </ItemGroup>
+  
+  <Choose>
+    <When Condition=" '$(Platform)'=='x64' ">
+      <PropertyGroup>
+        <CppCheckPlatform>win64</CppCheckPlatform>
+      </PropertyGroup>
+    </When>
+    <When Condition=" '$(Platform)'=='win32' ">
+      <Choose>
+        <When Condition=" '$(Characterset)'=='Unicode'">
+          <PropertyGroup>
+            <CppCheckPlatform>win32W</CppCheckPlatform>
+          </PropertyGroup>
+        </When>
+        <When Condition=" '$(Characterset)'=='MultiByte'">
+          <PropertyGroup>
+            <CppCheckPlatform>win32W</CppCheckPlatform>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <CppCheckPlatform>win32A</CppCheckPlatform>
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <CppCheckPlatform>native</CppCheckPlatform>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+
+
+
+
+  <PropertyGroup>
+    <CppCheckIncludes>$(IntDir)CppCheck.include.txt</CppCheckIncludes>
+    <CppCheckSuppress>$(IntDir)CppCheck.suppress.txt</CppCheckSuppress>
+  </PropertyGroup>
+
+  <Target Name="CppCheckIncludes" Outputs="$(CppCheckIncludes)">
+    <Delete Files="$(CppCheckIncludes)"/>
+
+    <WriteLinesToFile Condition="'$(Include)' != ''"
+      File="$(CppCheckIncludes)"
+      Lines="$(Include.Replace(';;',';').Replace(';;',';').Replace(';','%0a'))"
+      Overwrite="false" Encoding="ASCII"/>
+
+    <WriteLinesToFile Condition="'%(ClCompile.AdditionalIncludeDirectories)' != ''"
+      File="$(CppCheckIncludes)"
+      Lines="%(ClCompile.AdditionalIncludeDirectories)"
+      Overwrite="false" Encoding="ASCII"/>
+
+    <WriteLinesToFile Condition="'%(ClCompile.AdditionalIncludeDirectories)' == ''"
+      File="$(CppCheckIncludes)"
+      Lines="%0a"
+      Overwrite="false" Encoding="ASCII"/>
+  </Target>
+
+  <Target Name="CppCheckSuppress" Outputs="$(CppCheckSuppress)">
+    <Delete Files="$(CppCheckSuppress)"/>
+
+    <WriteLinesToFile Condition="'$(ExcludePath)' != ''"
+      File="$(CppCheckSuppress)"
+      Lines="*:$([System.String]::Copy(&quot;$(ExcludePath)&quot;).Replace(';;',';').Replace(';;',';').Replace('\;',';').Replace('/;',';').TrimEnd(';').Replace(';','\*%0a*:'))\*"
+      Overwrite="false" Encoding="ASCII"/>
+  </Target>
+
+  <PropertyGroup Label="CppCheckProps">
+    <CppCheckExe>$(CPPCHECK_ROOT)\cppcheck.exe</CppCheckExe>
+    <CppCheckCommandLine>&quot;$(CppCheckExe)&quot; -v -q --template=vs --suppress=unmatchedSuppression --platform=$(CppCheckPlatform) --enable=all  --includes-file=$(CppCheckIncludes) --suppressions-list=$(CppCheckSuppress) $(CppCheckOutputMode)</CppCheckCommandLine>
+    <CppCheckAdditionalDefines>-D_MT -D_M_X64</CppCheckAdditionalDefines>
+  </PropertyGroup>
+
+  <Target Name="CppCheckClCompile" Outputs="$(IntDir)%(ClCompile.Identity).cppcheck.plist" DependsOnTargets="_SelectedFiles;$(ComputeCompileInputsTargets);SelectCustomBuild;CppCheckIncludes;CppCheckSuppress" AfterTargets="ClCompile">
+    <ItemGroup Condition="'@(SelectedFiles)'!=''">
+      <ClCompile Remove="@(ClCompile)" Condition="'%(Identity)'!='@(SelectedFiles)'"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <CppDefines>$(CppCheckAdditionalDefines) -D$([System.String]::Copy(&quot;%(ClCompile.PreprocessorDefinitions)&quot;).TrimEnd(';').Replace(';',' -D'))</CppDefines>
+    </PropertyGroup>
+
+    <Message  Condition="'@(ClCompile)'!=''" Text="[CPPCHECK Source] %(ClCompile.Identity)" Importance="high" />
+
+    <Exec Condition="'@(ClCompile)'!=''" IgnoreExitCode="yes" command="$(CppCheckCommandLine) $(CppDefines) %(ClCompile.Identity)" />
+  </Target>
+
+
+  <Target Name="CppCheckClInclude" Outputs="$(IntDir)%(ClInclude.Identity).cppcheck.plist" DependsOnTargets="_SelectedFiles;$(ComputeCompileInputsTargets);SelectCustomBuild;CppCheckIncludes;CppCheckSuppress" AfterTargets="ClCompile">
+    <ItemGroup Condition="'@(SelectedFiles)'!=''">
+      <ClInclude Remove="@(ClInclude)" Condition="'%(Identity)'!='@(SelectedFiles)'"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <CppDefines>$(CppCheckAdditionalDefines) -D$([System.String]::Copy(&quot;%(ClCompile.PreprocessorDefinitions)&quot;).TrimEnd(';').Replace(';',' -D'))</CppDefines>
+    </PropertyGroup>
+
+    <Message  Condition="'@(SelectedFiles)'==''" Text="[CPPCHECK Header] %(ClInclude.Identity)" Importance="high"/>
+
+    <Exec Condition="'@(SelectedFiles)'==''" IgnoreExitCode="yes" command="$(CppCheckCommandLine) $(CppDefines) %(ClInclude.Identity)" />
+  </Target>
+
+
+</Project>
